@@ -7,6 +7,7 @@ const vm = require("node:vm");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const inlineScript = html.split("<script>")[1]?.split("</script>")[0];
 assert.ok(inlineScript, "app inline script exists");
+const competitorScript = fs.readFileSync(path.join(__dirname, "..", "competitor.js"), "utf8");
 
 function getDeclaration(source, start, end) {
   const first = source.indexOf(start);
@@ -19,6 +20,9 @@ function getDeclaration(source, start, end) {
 const aiFunction = getDeclaration(inlineScript, "async function ai(", "function localIdeas(");
 const storyboardParser = getDeclaration(inlineScript, "function parseStoryboard(", '$("storyBtn").onclick');
 const checklistRenderer = getDeclaration(inlineScript, "function renderChecklists(", "function toast(");
+const channelReferenceParser = getDeclaration(competitorScript, "function parseYouTubeChannelReference(", "\nfunction countReferenceWords(");
+const referenceWordCounter = getDeclaration(competitorScript, "function countReferenceWords(", "\nfunction parseYouTubeDuration(");
+const youtubeDurationParser = getDeclaration(competitorScript, "function parseYouTubeDuration(", "\nfunction formatYouTubeDuration(");
 
 function createHarness({ values, sessionKey = "", response }) {
   const requests = [];
@@ -124,6 +128,38 @@ test("parses structured storyboard scenes and rejects malformed output", () => {
     { n: 1, narration: "line", visual: "shot", text: "caption", edit: "cut" }
   ]));
   assert.equal(context.parse("not json"), null);
+});
+
+test("accepts supported YouTube channel URLs and rejects unrelated URLs", () => {
+  const context = { URL };
+  vm.createContext(context);
+  vm.runInContext(`${channelReferenceParser}\nglobalThis.parse = parseYouTubeChannelReference;`, context);
+
+  assert.deepEqual(JSON.parse(JSON.stringify(context.parse("@example.creator"))), {
+    parameter: "forHandle",
+    value: "example.creator"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(context.parse("https://www.youtube.com/@example?feature=shared"))), {
+    parameter: "forHandle",
+    value: "example"
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(context.parse("https://youtube.com/channel/UC1234567890123456789012"))), {
+    parameter: "id",
+    value: "UC1234567890123456789012"
+  });
+  assert.throws(() => context.parse("https://example.com/@someone"), /youtube\.com/);
+  assert.throws(() => context.parse("https://youtube.com/c/someone"), /Custom/);
+});
+
+test("counts Unicode transcript words and parses YouTube video durations", () => {
+  const context = {};
+  vm.createContext(context);
+  vm.runInContext(`${referenceWordCounter}\n${youtubeDurationParser}\nglobalThis.count = countReferenceWords; globalThis.duration = parseYouTubeDuration;`, context);
+
+  assert.equal(context.count("Hello, world! বাংলা শব্দ 123"), 5);
+  assert.equal(context.duration("PT1H2M3S"), 3723);
+  assert.equal(context.duration("PT7M"), 420);
+  assert.equal(context.duration("invalid"), 0);
 });
 
 test("initializes missing checklist state unchecked and persists user changes", () => {
