@@ -30,6 +30,7 @@ function createHarness({ values, sessionKey = "", response }) {
   const context = {
     $: id => elements[id],
     openRouterApiKey: sessionKey,
+    geminiApiKey: "",
     sessionStorage: { getItem: () => sessionKey },
     fetch: async (url, options) => {
       requests.push({ url, options });
@@ -70,6 +71,7 @@ const localValues = {
   ollamaUrl: "http://127.0.0.1:11434/",
   apiModel: "qwen2.5:3b",
   openRouterModel: "",
+  geminiModel: "gemini-2.5-flash",
   apiEndpoint: "/.netlify/functions/ai"
 };
 
@@ -95,6 +97,34 @@ test("sends a tab-only OpenRouter key directly with the free router by default",
   assert.equal(harness.requests[0].url, "https://openrouter.ai/api/v1/chat/completions");
   assert.equal(harness.requests[0].options.headers.Authorization, "Bearer user-key");
   assert.equal(JSON.parse(harness.requests[0].options.body).model, "openrouter/free");
+});
+
+test("sends Gemini requests directly with the tab-only key and configured model", async () => {
+  const harness = createHarness({
+    values: { ...localValues, aiProvider: "gemini", geminiModel: "gemini-2.5-flash" },
+    sessionKey: "gemini-user-key",
+    response: okResponse({ candidates: [{ content: { parts: [{ text: "Gemini response" }] } }] })
+  });
+
+  assert.equal(await harness.context.runAi("hello", "system"), "Gemini response");
+  assert.equal(harness.requests[0].url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent");
+  assert.equal(harness.requests[0].options.headers["x-goog-api-key"], "gemini-user-key");
+  assert.equal(harness.requests[0].options.headers.Authorization, undefined);
+  assert.deepEqual(JSON.parse(harness.requests[0].options.body), {
+    systemInstruction: { parts: [{ text: "system" }] },
+    contents: [{ role: "user", parts: [{ text: "hello" }] }],
+    generationConfig: { temperature: 0.7 }
+  });
+});
+
+test("requires a Gemini API key instead of sending a keyless request", async () => {
+  const harness = createHarness({
+    values: { ...localValues, aiProvider: "gemini" },
+    response: okResponse({ candidates: [{ content: { parts: [{ text: "unexpected" }] } }] })
+  });
+
+  await assert.rejects(harness.context.runAi("hello"), /Enter a Gemini API key/);
+  assert.equal(harness.requests.length, 0);
 });
 
 test("uses the Netlify function when no browser key is provided", async () => {
