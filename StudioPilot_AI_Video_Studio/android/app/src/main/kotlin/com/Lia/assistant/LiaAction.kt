@@ -10,4 +10,5 @@ data class LiaActionResult(
 data class LiaTool(
     val name: String,
     val description: String,
+    val parameters: Map<String, String> = emptyMap(),
 )
