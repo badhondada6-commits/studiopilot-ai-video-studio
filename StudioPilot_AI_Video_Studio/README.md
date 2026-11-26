@@ -10,7 +10,7 @@ A free-first, local-first video production workspace for web and desktop PWA. Th
 - Paste a reference transcript to measure its word count and analyze broad structure; script drafting can target approximately that length without reproducing the transcript.
 - Script, production, and pre-publish checklist progress is saved per project; legacy projects start unchecked.
 - Works without an AI service using local fallback templates.
-- Optional text generation with a local Ollama model (no API key) or OpenRouter's free-model router.
+- Optional text generation with a local Ollama model (no API key), Google Gemini, or OpenRouter.
 - Voice-over recording/import and system-voice preview; system speech is preview-only.
 - Create prompt-informed, stylized scene illustrations in-browser with no key/server, upload images, or optionally use a locally hosted AUTOMATIC1111 / Forge Stable Diffusion API.
 - Upload source videos or create simple pan-and-zoom clips from still images in the browser.
@@ -58,14 +58,18 @@ The API and model are separate projects with their own hardware requirements, li
 
 ## Optional OpenRouter free models
 
-OpenRouter requires an account/API key. Create one at [OpenRouter Keys](https://openrouter.ai/keys), then in Settings choose **OpenRouter** and enter the key. It is kept in this browser tab's `sessionStorage` (not in the project or localStorage) and sent directly to OpenRouter. Clear it with **Clear key from this tab**. Only use your own key on a site you trust.
+OpenRouter requires an account/API key. Create one at [OpenRouter Keys](https://openrouter.ai/keys), then in Settings choose **OpenRouter** and enter the key. It is kept in this browser tab's `sessionStorage` (not in the project or localStorage) and sent directly to OpenRouter. Clear it with **Clear OpenRouter key**. Only use your own key on a site you trust.
 
 The default model is `openrouter/free`, which routes only to available free models. Alternatively, select a model currently marked free in the [OpenRouter model catalog](https://openrouter.ai/models). Free availability does not guarantee an open-source license: check a model's license before use if that matters. Free access can have strict rate limits, outages, or model changes; it is not unlimited or guaranteed. Do not set paid fallbacks.
 
 For a private Netlify deployment, you can instead set `OPENROUTER_API_KEY` under **Site configuration → Environment variables** and redeploy. The function defaults to `openrouter/free`; if setting `OPENROUTER_MODEL`, choose a free-only model/router. Never commit API keys or put them in the frontend source.
 
+## Optional Google Gemini
+
+Create a key in [Google AI Studio](https://aistudio.google.com/app/apikey), then in Settings choose **Google Gemini**, enter the model (default `gemini-2.5-flash`) and paste the key. The key stays in the current tab's `sessionStorage` (not in the project or localStorage) and is sent directly to Google's Gemini API. Clear it with **Clear Gemini key**. Use a restricted key and only enter it on a site you trust; Google account, billing, and model availability limits apply.
+
 ## Local preview and data
 
 Open `index.html` for the local fallback experience. For service-worker/PWA behavior, serve this folder over localhost or HTTPS. Local Ollama requests also require Ollama's CORS allow-list to include the app's origin.
 
-Projects are saved in browser `localStorage`; AI provider preferences and the local image API URL are stored locally, but optional OpenRouter and YouTube API keys are only kept for the current tab session. The pasted reference transcript is analyzed in memory only and is not included in the exported project. Export project JSON regularly as a backup. Clearing browser storage can remove projects. Voice, image, source-video, music, and final-render blobs are held in memory only; download the final render and keep source files separately before closing or reloading the tab.
+Projects are saved in browser `localStorage`; AI provider preferences and the local image API URL are stored locally, but optional Gemini, OpenRouter, and YouTube API keys are only kept for the current tab session. Hosted AI requests send prompts directly to the selected provider. The pasted reference transcript is analyzed in memory only and is not included in the exported project. Export project JSON regularly as a backup. Clearing browser storage can remove projects. Voice, image, source-video, music, and final-render blobs are held in memory only; download the final render and keep source files separately before closing or reloading the tab.
