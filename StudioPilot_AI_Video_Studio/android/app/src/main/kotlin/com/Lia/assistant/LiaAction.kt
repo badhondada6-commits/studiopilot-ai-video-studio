@@ -1,6 +1,11 @@
 package com.Lia.assistant
 
-data class LiaAction(val name: String)
+import org.json.JSONObject
+
+data class LiaAction(
+    val name: String,
+    val args: JSONObject = JSONObject(),
+)
 
 data class LiaActionResult(
     val available: Boolean,

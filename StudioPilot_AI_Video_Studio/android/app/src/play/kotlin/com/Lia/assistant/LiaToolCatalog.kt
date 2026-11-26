@@ -4,7 +4,13 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 object LiaToolCatalog {
-    val tools: List<LiaTool> = emptyList()
+    val tools: List<LiaTool> = listOf(
+        LiaTool(
+            name = "build_website",
+            description = "Start building a website from the supplied prompt.",
+            parameters = mapOf("prompt" to "Description of the website to build."),
+        ),
+    )
 
     fun declarations(): JSONArray = JSONArray().apply {
         tools.forEach { tool ->

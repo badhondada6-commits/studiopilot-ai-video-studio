@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <service
-            android:name=".LiaAssistantService"
+            android:name=".voice.VoiceForegroundService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
         <activity
