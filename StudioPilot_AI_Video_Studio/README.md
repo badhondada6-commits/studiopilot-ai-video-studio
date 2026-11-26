@@ -24,9 +24,15 @@ This is a focused browser editor, not a full nonlinear editor or generative vide
 
 Deploy the contents of this folder to Netlify (if connecting this repository, set the base directory to `StudioPilot_AI_Video_Studio`; leave the build command blank and set publish directory to `.`), or any static HTTPS host. The Netlify function in `netlify/functions/ai.js` is optional and is only needed for server-side OpenRouter requests. Local fallback templates work without a key or function.
 
+## Android app (Part 01 scaffold)
+
+The native Android app is in `android/`, separate from the browser app. It has `direct` and `play` distribution flavors, Android SDK 36 (minimum SDK 26), Java 17, and a Compose Hello World screen. Direct-only accessibility, package-query, overlay, and FileProvider components are excluded from Play. Build either debug flavor from that directory with `.\gradlew.bat assembleDirectDebug` or `.\gradlew.bat assemblePlayDebug` on Windows (`./gradlew` on macOS/Linux). Android Studio can also open the `android/` directory directly.
+
+The base manifest includes the requested network, audio, notification, foreground-service, contacts, and calling permissions plus the voice service. Flavor-specific implementations of accessibility, action execution, tools, prompts, access-key management, overlays, and routes preserve matching APIs; the Play variants disable direct-only capabilities. Release signing is optional: create `android/keystore.properties` with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword` to configure it. The properties file and keystore files are git-ignored.
+
 ## Install as a desktop app
 
-Open the deployed HTTPS site in Chrome or Edge and choose **Install StudioPilot** from the browser's install icon/menu. The PWA shell is cached for offline use; local AI still needs Ollama running, and hosted AI needs an internet connection. This project has no separate Electron/Tauri native wrapper.
+Open the deployed HTTPS site in Chrome or Edge and choose **Install StudioPilot** from the browser's install icon/menu. The PWA shell is cached for offline use; local AI still needs Ollama running, and hosted AI needs an internet connection. The browser app has no separate Electron/Tauri native wrapper.
 
 ## No-key local AI (recommended)
 
