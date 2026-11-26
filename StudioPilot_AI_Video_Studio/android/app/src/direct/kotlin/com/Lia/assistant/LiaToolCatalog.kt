@@ -12,6 +12,8 @@ object LiaToolCatalog {
         ),
     )
 
+    fun isDeclared(name: String): Boolean = tools.any { it.name == name }
+
     fun declarations(): JSONArray = JSONArray().apply {
         tools.forEach { tool ->
             val properties = JSONObject().apply {

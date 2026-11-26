@@ -4,11 +4,11 @@ import android.content.Context
 import com.Lia.assistant.ActionExecutor
 import com.Lia.assistant.InstalledAppLabelCache
 import com.Lia.assistant.LiaAction
+import com.Lia.assistant.LiaToolCatalog
 import com.Lia.assistant.data.AssistantBrand
 import com.Lia.assistant.data.LanguagePreference
 import com.Lia.assistant.data.Personality
 import com.Lia.assistant.data.PersonalityRepository
-import com.Lia.assistant.forge.ForgeVoiceRequestQueue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +81,9 @@ object VoiceSessionManager {
     private val _vadActive = MutableStateFlow(false)
     val vadActive: StateFlow<Boolean> = _vadActive.asStateFlow()
 
+    private val _conversationTurns = MutableStateFlow<List<ConversationTurn>>(emptyList())
+    val conversationTurns: StateFlow<List<ConversationTurn>> = _conversationTurns.asStateFlow()
+
     @Volatile
     private var applicationContext: Context? = null
 
@@ -134,6 +137,7 @@ object VoiceSessionManager {
         }
 
         ConversationMemory.clear()
+        _conversationTurns.value = emptyList()
         EchoGuard.reset()
         VoiceLatencyTracker.reset()
 
@@ -192,6 +196,7 @@ object VoiceSessionManager {
         }
         EchoGuard.reset()
         ConversationMemory.clear()
+        _conversationTurns.value = emptyList()
         _state.value = NovaOrbState.IDLE
         _amplitude.value = 0f
         _muted.value = false
@@ -323,6 +328,7 @@ object VoiceSessionManager {
             synchronized(lifecycleLock) {
                 if (!_isActive.value || sessionEpoch.get() != epoch) return
                 ConversationMemory.addUser(text)
+                _conversationTurns.value = ConversationMemory.turns()
                 _detectedLanguage.value = LanguageDetector.detect(text)
                 _state.value = NovaOrbState.THINKING
                 _statusText.value = "${AssistantBrand.NAME} is thinking..."
@@ -334,18 +340,27 @@ object VoiceSessionManager {
             synchronized(lifecycleLock) {
                 if (!_isActive.value || sessionEpoch.get() != epoch) return
                 ConversationMemory.addAssistant(text)
+                _conversationTurns.value = ConversationMemory.turns()
             }
         }
 
         override fun onToolCall(id: String, name: String, args: JSONObject) {
             if (!isCurrentEpoch(epoch)) return
-            if (name == BUILD_WEBSITE_TOOL) {
-                ForgeVoiceRequestQueue.submit(args.optString("prompt", ""))
+            if (!LiaToolCatalog.isDeclared(name)) {
                 sendToolResponse(
                     epoch,
                     id,
                     name,
-                    JSONObject().put("result", "forge_started").toString(),
+                    toolUnavailableResponse("That action is not available in this version."),
+                )
+                return
+            }
+            if (name == BUILD_WEBSITE_TOOL) {
+                sendToolResponse(
+                    epoch,
+                    id,
+                    name,
+                    toolUnavailableResponse("Website building is not available in this version yet."),
                 )
                 return
             }
@@ -461,6 +476,12 @@ object VoiceSessionManager {
         if (!isCurrentEpoch(epoch)) return
         geminiClient?.sendToolResponse(id, name, resultJson)
     }
+
+    private fun toolUnavailableResponse(message: String): String =
+        JSONObject()
+            .put("result", "unavailable")
+            .put("message", message)
+            .toString()
 
     private fun scheduleReconnect(epoch: Long) {
         synchronized(lifecycleLock) {

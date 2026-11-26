@@ -22,6 +22,7 @@ class PersonalityPromptBuilderTest {
                 assertTrue(prompt.contains("You are Lia, a persistent personal voice assistant"))
                 assertTrue(prompt.contains(personality.systemInstruction))
                 assertTrue(prompt.contains("Language policy:"))
+                assertTrue(prompt.contains("Only use a listed tool when the user clearly and specifically requests that action."))
             }
         }
     }

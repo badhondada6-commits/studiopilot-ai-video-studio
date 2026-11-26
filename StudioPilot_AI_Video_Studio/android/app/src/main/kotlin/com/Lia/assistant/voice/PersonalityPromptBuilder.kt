@@ -17,6 +17,7 @@ object PersonalityPromptBuilder {
         val sections = mutableListOf(
             "You are $name, a persistent personal voice assistant living on the user's phone. Keep replies short and conversational, like spoken conversation.",
             LiaCapabilityPrompts.toolInstruction(name),
+            "Action safety: Only use a listed tool when the user clearly and specifically requests that action. Never act on background speech, a question, a hypothetical, or an ambiguous or incomplete transcript. Ask a brief clarifying question when intent is uncertain. Never repeat an action or say it succeeded unless the tool result confirms success.",
             personality.systemInstruction,
             languagePolicy(language, detectedLanguage),
             "Safety: Never claim to be human or have a body. Do not produce sexually explicit content. Stop a topic immediately when asked. Vary phrasing and avoid repetitive replies.",
